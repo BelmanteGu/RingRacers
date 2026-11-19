@@ -23,6 +23,7 @@
 
 #include "../rhi/rhi.hpp"
 #include "i_touch.h"
+extern "C" float v_safearea[4];
 #ifdef ANDROID
 #include "../rhi/gles2/gles2_rhi.hpp"
 #include "rhi_gles2_platform.hpp"
@@ -203,6 +204,13 @@ static void Impl_SetupNativeAspectModes(void)
 		windowedModes[slots[i]][1] = heights[i];
 	}
 	android_native_mode = slots[1]; // 480p native aspect is the default
+
+	{
+		if (M_CheckParm("-safearea"))
+			for (int i = 0; i < 4 && M_IsNextParm(); i++)
+				v_safearea[i] = atoi(M_GetNextParm()) / 10000.f;
+		CONS_Printf("Safe area: L%.3f T%.3f R%.3f B%.3f\n", v_safearea[0], v_safearea[1], v_safearea[2], v_safearea[3]);
+	}
 	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0"); // touch is handled natively (i_touch.cpp)
 	CONS_Printf("Ultrawide: display %dx%d -> default %dx%d\n", lw, lh,
 		windowedModes[android_native_mode][0], windowedModes[android_native_mode][1]);

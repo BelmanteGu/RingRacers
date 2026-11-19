@@ -12,7 +12,7 @@
 #include "../k_menu.h"
 
 extern consvar_t cv_touch_controls, cv_touch_opacity, cv_touch_size,
-	cv_touch_lefty, cv_touch_labels, cv_touch_menuswipe, cv_ultrawide;
+	cv_touch_lefty, cv_touch_labels, cv_touch_menuswipe, cv_ultrawide, cv_hudsafearea;
 
 menuitem_t OPTIONS_Touch[] =
 {
@@ -42,6 +42,9 @@ menuitem_t OPTIONS_Touch[] =
 
 	{IT_STRING | IT_CVAR, "Ultrawide", "Fill your phone's whole screen instead of 16:9.",
 		NULL, {.cvar = &cv_ultrawide}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "HUD Safe Area", "Keep the HUD away from the camera cutout and rounded corners.",
+		NULL, {.cvar = &cv_hudsafearea}, 0, 0},
 };
 
 menu_t OPTIONS_TouchDef = {

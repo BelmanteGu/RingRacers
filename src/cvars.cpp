@@ -461,6 +461,7 @@ consvar_t cv_touch_opacity = Player("touch_opacity", "7").min_max(1, 10);
 consvar_t cv_touch_size = Player("touch_size", "Normal").values({{80, "Small"}, {100, "Normal"}, {120, "Large"}, {140, "Huge"}});
 consvar_t cv_touch_lefty = Player("touch_lefty", "Off").on_off();
 consvar_t cv_touch_labels = Player("touch_labels", "On").on_off();
+consvar_t cv_hudsafearea = Player("hudsafearea", "On").on_off();
 consvar_t cv_touch_menuswipe = Player("touch_menuswipe", "On").on_off();
 
 consvar_t cv_scr_effect = Player("scr_effect", "Sharp Bilinear").values({{0, "Nearest"}, {1, "Sharp Bilinear"}, {2, "SalCRT"}, {3, "SalCRT Sharp"}}).save();

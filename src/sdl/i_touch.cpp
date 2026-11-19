@@ -39,6 +39,7 @@
 #include "../d_event.h"
 #include "../d_main.h"
 #include "../g_game.h"
+#include "../g_input.h"
 #include "../g_state.h"
 #include "../hu_stuff.h"
 #include "../i_system.h"
@@ -143,6 +144,20 @@ bool overlay_visible()
 
 // Layout ------------------------------------------------------------------
 
+// The keyboard key bound to a game control in the player's profile, so the
+// touch button presses exactly what the game's on-screen prompts show (and
+// follows the player's remapping).
+INT32 kb(INT32 gc, INT32 fallback)
+{
+	for (INT32 i = 0; i < MAXINPUTMAPPING; i++)
+	{
+		const INT32 k = gamecontrol[0][gc][i];
+		if (k > 0 && k < KEY_JOY1)
+			return k;
+	}
+	return fallback;
+}
+
 void add(Kind kind, float cx, float cy, float d, INT32 key, patch_t **patch, const char *label, bool primary = false)
 {
 	const float scale = cv_touch_size.value / 100.f;
@@ -171,9 +186,9 @@ void build_layout()
 
 	if (g_menu_layout)
 	{
-		add(Kind::button, R(0.13f), B(0.15f), 0.22f * u, 'a', kp_button_a[0], "OK", true);
-		add(Kind::button, R(0.38f), B(0.10f), 0.17f * u, KEY_LSHIFT, kp_button_b[0], "BACK");
-		add(Kind::button, R(0.15f), B(0.43f), 0.14f * u, 'q', kp_button_c[0], "EXTRA");
+		add(Kind::button, R(0.13f), B(0.15f), 0.22f * u, kb(gc_a, 'a'), kp_button_a[0], "OK", true);
+		add(Kind::button, R(0.38f), B(0.10f), 0.17f * u, kb(gc_b, KEY_LSHIFT), kp_button_b[0], "BACK");
+		add(Kind::button, R(0.15f), B(0.43f), 0.14f * u, kb(gc_c, 'q'), kp_button_c[0], "EXTRA");
 		if (chat_on || con_destlines > 0 || menutyping.active)
 			add(Kind::keyboard, w * 0.5f, 0.09f * u, 0.12f * u, 0, kp_button_start[0], "KEYBOARD");
 		return;
@@ -181,19 +196,19 @@ void build_layout()
 
 	// Race: big GO under the thumb, DRIFT next to it (sliding a thumb
 	// between them holds both), ITEM above, BRAKE on the far side.
-	add(Kind::button, R(0.13f), B(0.15f), 0.24f * u, 'a', kp_button_a[0], "GO", true);
-	add(Kind::button, R(0.40f), B(0.10f), 0.20f * u, 's', kp_button_r[0], "DRIFT");
-	add(Kind::button, R(0.30f), B(0.40f), 0.17f * u, KEY_SPACE, kp_button_l[0], "ITEM");
-	add(Kind::button, R(0.06f), B(0.44f), 0.15f * u, 'd', kp_button_x[0], "BRAKE");
-	add(Kind::button, R(0.63f), B(0.08f), 0.14f * u, 'q', kp_button_c[0], "SPIN");
-	add(Kind::button, R(0.58f), B(0.33f), 0.12f * u, KEY_LSHIFT, kp_button_b[0], "LOOK");
-	add(Kind::button, R(0.10f), B(0.68f), 0.12f * u, 'v', kp_button_y[0], "BAIL");
+	add(Kind::button, R(0.13f), B(0.15f), 0.24f * u, kb(gc_a, 'a'), kp_button_a[0], "GO", true);
+	add(Kind::button, R(0.40f), B(0.10f), 0.20f * u, kb(gc_r, 's'), kp_button_r[0], "DRIFT");
+	add(Kind::button, R(0.30f), B(0.40f), 0.17f * u, kb(gc_l, KEY_SPACE), kp_button_l[0], "ITEM");
+	add(Kind::button, R(0.06f), B(0.44f), 0.15f * u, kb(gc_x, 'd'), kp_button_x[0], "BRAKE");
+	add(Kind::button, R(0.63f), B(0.08f), 0.14f * u, kb(gc_c, 'q'), kp_button_c[0], "SPIN");
+	add(Kind::button, R(0.58f), B(0.33f), 0.12f * u, kb(gc_b, KEY_LSHIFT), kp_button_b[0], "LOOK");
+	add(Kind::button, R(0.10f), B(0.68f), 0.12f * u, kb(gc_y, 'v'), kp_button_y[0], "BAIL");
 	if (netgame)
 	{
-		add(Kind::button, R(0.33f), B(0.66f), 0.11f * u, 'z', kp_button_z[0], "VOTE");
-		add(Kind::button, w * 0.5f - 0.10f * u, 0.08f * u, 0.10f * u, 't', kp_button_y[0], "CHAT");
+		add(Kind::button, R(0.33f), B(0.66f), 0.11f * u, kb(gc_z, 'z'), kp_button_z[0], "VOTE");
+		add(Kind::button, w * 0.5f - 0.10f * u, 0.08f * u, 0.10f * u, kb(gc_talk, 't'), kp_button_y[0], "CHAT");
 	}
-	add(Kind::button, w * 0.5f + (netgame ? 0.10f * u : 0.f), 0.08f * u, 0.10f * u, KEY_ESCAPE, kp_button_start[0], "PAUSE");
+	add(Kind::button, w * 0.5f + (netgame ? 0.10f * u : 0.f), 0.08f * u, 0.10f * u, kb(gc_start, KEY_ESCAPE), kp_button_start[0], "PAUSE");
 }
 
 // Hit testing ---------------------------------------------------------------
@@ -399,6 +414,8 @@ void draw_label(float px, float py, const char *text, INT32 flags)
 }
 
 bool key_held(INT32 k) { return g_pressed[k]; }
+
+
 
 } // namespace
 

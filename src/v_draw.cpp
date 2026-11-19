@@ -23,6 +23,7 @@
 #include "k_profiles.h" // controls
 #include "p_local.h" // stplyr
 #include "r_fps.h" // R_GetViewNumber()
+#include "sdl/i_touch.h"
 
 using srb2::Draw;
 using Chain = Draw::Chain;
@@ -193,8 +194,29 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 			}
 
 
+			// Android port: never show keyboard keycaps in prompts. On the touch
+			// screen (or when a control is only bound to a keyboard key) prompts
+			// keep the Saturn button glyphs, which the on-screen buttons also
+			// show. A USB/Bluetooth gamepad still gets its own button prompts.
+			auto android_skip_keyboard_prompt = [&](UINT8 lp, int control) -> bool
+			{
+#if defined(__ANDROID__) || defined(ANDROID)
+				if (I_TouchOwnsInput())
+					return true;
+				if (auto id = inputdefinition.find(control); id != inputdefinition.end())
+				{
+					INT32 bind = G_FindPlayerBindForGameControl(lp, id->second);
+					return (bind > 0 && bind < KEY_JOY1);
+				}
+#else
+				(void)lp; (void)control;
+#endif
+				return false;
+			};
+
 			// This isn't how v_video.cpp checks for buttons and I don't know why.
-			if (cv_descriptiveinput[localplayer].value && ((it->second & 0xF0) != 0x80)) // Should we do game control translation?
+			if (cv_descriptiveinput[localplayer].value && ((it->second & 0xF0) != 0x80) // Should we do game control translation?
+				&& !android_skip_keyboard_prompt(localplayer, it->second & (~0xB0)))
 			{
 				if (auto id = inputdefinition.find(it->second & (~0xB0)); id != inputdefinition.end()) // This is a game control, do descriptive input translation!
 				{

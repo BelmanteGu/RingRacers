@@ -61,6 +61,7 @@
 #include "z_zone.h"
 #include "d_main.h"
 #include "sdl/i_touch.h"
+extern "C" boolean v_safearea_active;
 #include "d_netfil.h"
 #include "m_cheat.h"
 #include "y_inter.h"
@@ -706,7 +707,11 @@ static bool D_Display(bool world)
 				case GS_LEVEL:
 				{
 					AM_Drawer();
-					ST_Drawer();
+					{
+						v_safearea_active = true; // keep the HUD out of the cutout/corners
+						ST_Drawer();
+						v_safearea_active = false;
+					}
 					srb2::r_debug::draw_frame_list();
 					F_TextPromptDrawer();
 					break;

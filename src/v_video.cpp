@@ -513,6 +513,15 @@ void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT3
 #endif
 }
 
+// Android port: the phone's safe area (camera cutout, rounded corners) as a
+// fraction of the screen. Applied to edge-snapped elements while the HUD is
+// drawn (v_safearea_active), so the HUD never hides under the cutout.
+extern "C" {
+float v_safearea[4] = {0, 0, 0, 0}; // left, top, right, bottom
+boolean v_safearea_active = false;
+}
+extern "C" consvar_t cv_hudsafearea;
+
 void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 dupy)
 {
 	// dupx adjustments pretend that screen width is BASEVIDWIDTH * dupx
@@ -559,6 +568,18 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 			*y += (screenheight - baseheight);
 		else if (!(options & V_SNAPTOTOP))
 			*y += (screenheight - baseheight) / 2;
+	}
+
+	if (v_safearea_active && cv_hudsafearea.value && r_splitscreen == 0)
+	{
+		if (options & V_SNAPTOLEFT)
+			*x += (INT32)(v_safearea[0] * vid.width);
+		else if (options & V_SNAPTORIGHT)
+			*x -= (INT32)(v_safearea[2] * vid.width);
+		if (options & V_SNAPTOTOP)
+			*y += (INT32)(v_safearea[1] * vid.height);
+		else if (options & V_SNAPTOBOTTOM)
+			*y -= (INT32)(v_safearea[3] * vid.height);
 	}
 
 	if (options & V_SPLITSCREEN)
