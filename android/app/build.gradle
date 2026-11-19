@@ -108,8 +108,8 @@ android {
         applicationId "io.github.belmantegu.ringracers"
         minSdk 28
         targetSdk 34
-        versionCode 2405
-        versionName "2.4-belmante-1"
+        versionCode 5
+        versionName "0.5"
 
         ndk {
             abiFilters "arm64-v8a"
@@ -139,12 +139,30 @@ android {
         }
     }
 
+    // Release signing: paths come from local.properties (never committed).
+    def releaseStore = propOrEnv("releaseStoreFile", "RR_RELEASE_STORE", "")
+    def releasePassFile = propOrEnv("releaseStorePasswordFile", "RR_RELEASE_PASS_FILE", "")
+    if (releaseStore && releasePassFile && new File(releaseStore).isFile()) {
+        def pass = new File(releasePassFile).text.trim()
+        signingConfigs {
+            release {
+                storeFile new File(releaseStore)
+                storePassword pass
+                keyAlias propOrEnv("releaseKeyAlias", "RR_RELEASE_ALIAS", "ringracers")
+                keyPassword pass
+            }
+        }
+    }
+
     buildTypes {
         debug {
             debuggable true
         }
         release {
             minifyEnabled false
+            if (signingConfigs.findByName("release") != null) {
+                signingConfig signingConfigs.release
+            }
             ndk {
                 debugSymbolLevel "SYMBOL_TABLE"
             }
@@ -179,6 +197,12 @@ android {
         jniLibs {
             useLegacyPackaging = true
         }
+    }
+}
+
+android.applicationVariants.all { variant ->
+    variant.outputs.all {
+        outputFileName = "RingRacers-Android-${variant.versionName}${variant.buildType.name == 'release' ? '' : '-' + variant.buildType.name}.apk"
     }
 }
 
