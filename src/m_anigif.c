@@ -558,20 +558,20 @@ static void GIF_framewrite(INT32 input_width, INT32 input_height, const UINT8 *i
 		UINT8 *cur_screen = screens[0];
 		GIF_optimizeregion(cur_screen, movie_screen, &blitx, &blity, &blitw, &blith);
 
-		// blit to temp screen
-		if (rendermode == render_soft)
-		{
+				// blit to temp screen
+		#ifdef HWRENDER
+			if (rendermode == render_soft)
+			{
 			I_Assert(input != NULL);
 			GIF_rgbconvert(input, movie_screen);
-		}
-#ifdef HWRENDER
-		else if (rendermode == render_opengl)
-		{
+			}
+			else if (rendermode == render_opengl)
+			{
 			UINT8 *linear = HWR_GetScreenshot();
 			GIF_rgbconvert(linear, movie_screen);
 			free(linear);
-		}
-#endif
+			}
+		#endif
 	}
 	else
 	{
@@ -589,15 +589,16 @@ static void GIF_framewrite(INT32 input_width, INT32 input_height, const UINT8 *i
 		}
 #endif
 
-		// Copy the first frame into the movie screen
-		// OpenGL already does the same above.
-		if (gif_frames == 0 && rendermode == render_soft)
-		{
+				// Copy the first frame into the movie screen
+			// OpenGL already does the same above.
+		#ifdef HWRENDER
+			if (gif_frames == 0 && rendermode == render_soft)
+			{
 			I_Assert(input != NULL);
 			GIF_rgbconvert(input, screens[0]);
-		}
-
-		movie_screen = screens[0];
+			}
+		#endif
+			movie_screen = screens[0];
 	}
 
 	// screen regions are handled in GIF_lzw

@@ -29,9 +29,14 @@ trycmp (char **pp, char *cp,
 {
 	char *p;
 	p = (*pp);
+	if (!p)
+		return 1;
 	if (strncasecmp(p, q, qn) == 0)
 		return 0;
-	(*pp) = strchr(&p[1], (*cp));
+	if (*p == '\0')
+		(*pp) = NULL;
+	else
+		(*pp) = strchr(p + 1, (*cp));
 	return 1;
 }
 
@@ -67,8 +72,13 @@ nongnu_strcasestr (const char *s, const char *q)
 	char  *cpa;
 	char  *cpb;
 
-	uc = toupper(*q);
-	lc = tolower(*q);
+	if (!q || !*q)
+		return (char *)s;
+	if (!s || !*s)
+		return NULL;
+
+	uc = toupper((unsigned char)*q);
+	lc = tolower((unsigned char)*q);
 
 	up = strchr(s, uc);
 	lp = strchr(s, lc);

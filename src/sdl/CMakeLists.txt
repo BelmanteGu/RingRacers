@@ -3,8 +3,6 @@
 target_sources(SRB2SDL2 PRIVATE
 	new_sound.cpp
 	ogl_sdl.c
-	rhi_gl2_platform.cpp
-	rhi_gl2_platform.hpp
 	i_threads.c
 	i_net.c
 	i_system.cpp
@@ -14,6 +12,19 @@ target_sources(SRB2SDL2 PRIVATE
 	endtxt.c
 	hwsym_sdl.c
 )
+
+if(ANDROID)
+	target_sources(SRB2SDL2 PRIVATE
+		rhi_gles2_platform.cpp
+		rhi_gles2_platform.hpp
+	)
+	target_compile_definitions(SRB2SDL2 PRIVATE FORCESDLMAIN NOMUMBLE)
+else()
+	target_sources(SRB2SDL2 PRIVATE
+		rhi_gl2_platform.cpp
+		rhi_gl2_platform.hpp
+	)
+endif()
 
 if(${SRB2_USEASM})
 	set_source_files_properties(${SRB2_ASM_SOURCES} PROPERTIES LANGUAGE C)
@@ -97,8 +108,10 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES Darwin)
 		BUNDLE DESTINATION .
 	)
 	set_property(TARGET SRB2SDL2 PROPERTY INSTALL_RPATH_USE_LINK_PATH ON)
+elseif(ANDROID)
+	install(TARGETS SRB2SDL2 LIBRARY DESTINATION .)
 else()
-	install(TARGETS SRB2SDL2 SRB2SDL2
+	install(TARGETS SRB2SDL2
 		RUNTIME DESTINATION .
 	)
 	if ((${CMAKE_BUILD_TYPE} MATCHES Debug) OR (${CMAKE_BUILD_TYPE} MATCHES RelWithDebInfo))

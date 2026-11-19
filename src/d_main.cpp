@@ -106,7 +106,7 @@ extern "C" consvar_t cv_lua_profile, cv_menuframeskip;
 
 /* Manually defined asset hashes
  */
- 
+
 #define ASSET_HASH_BIOS_PK3						"36201c4690256d133dff7d3879436dff"
 #define ASSET_HASH_SCRIPTS_PK3					"56be3c47192870c3265f19cf024e860e"
 #define ASSET_HASH_GFX_PK3						"76c824a221bd4745e002a8b7d0520621"
@@ -1481,11 +1481,21 @@ static void
 D_AbbrevCommit (void)
 {
 	UINT8 i;
+	size_t len = strlen(comprevision);
 
+	memset(comprevision_abbrev_bin, 0, sizeof(comprevision_abbrev_bin));
 	for (i = 0; i < GIT_SHA_ABBREV; ++i)
 	{
-		sscanf(&comprevision[i * 2], "%2hhx",
-				&comprevision_abbrev_bin[i]);
+		if (i * 2 < len)
+		{
+			unsigned int byteval = 0;
+			char hexpair[3] = {0, 0, 0};
+			hexpair[0] = comprevision[i * 2];
+			if (i * 2 + 1 < len)
+				hexpair[1] = comprevision[i * 2 + 1];
+			if (sscanf(hexpair, "%x", &byteval) == 1)
+				comprevision_abbrev_bin[i] = (UINT8)byteval;
+		}
 	}
 }
 
@@ -2320,10 +2330,6 @@ void D_SRB2Main(void)
 const char *D_Home(void)
 {
 	const char *userhome = NULL;
-
-#ifdef ANDROID
-	return "/data/data/org.srb2/";
-#endif
 
 	if (M_CheckParm("-home") && M_IsNextParm())
 		userhome = M_GetNextParm();

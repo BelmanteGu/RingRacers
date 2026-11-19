@@ -571,7 +571,7 @@ INT32 CL_CheckFiles(void)
 		{
 			// CONS_Printf("checking %d of %d / %d of %d?\n", i, fileneedednum, j, numwadfiles);
 			// CONS_Printf("i: %s / j: %s \n", fileneeded[i].filename, wadfiles[j]->filename);
-			
+
 			if (j < numwadfiles && !wadfiles[j]->important)
 			{
 				// Unimportant on our side.
@@ -1858,6 +1858,14 @@ void CURLPrepareFile(const char* url, int dfilenum)
 		curl_origtotalfilesize = curl_curfile->totalsize;
 
 		curl_easy_setopt(http_handle, CURLOPT_URL, va("%s/%s", url, curl_realname));
+#if defined(__ANDROID__) || defined(ANDROID)
+		curl_easy_setopt(http_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+		curl_easy_setopt(http_handle, CURLOPT_SSL_VERIFYHOST, 0L);
+		if (access("/apex/com.android.conscrypt/cacerts", R_OK) == 0)
+			curl_easy_setopt(http_handle, CURLOPT_CAPATH, "/apex/com.android.conscrypt/cacerts");
+		else if (access("/system/etc/security/cacerts", R_OK) == 0)
+			curl_easy_setopt(http_handle, CURLOPT_CAPATH, "/system/etc/security/cacerts");
+#endif
 
 		// Only allow HTTP and HTTPS
 #if LIBCURL_VERSION_MAJOR > 7 || (LIBCURL_VERSION_MAJOR == 7 && LIBCURL_VERSION_MINOR >= 85)

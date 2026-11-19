@@ -3648,9 +3648,11 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	pitch = thiscam->pitch + (angle_t)FixedMul(pitch - thiscam->pitch, camspeed/4);
 
+#ifdef HWRENDER
 	if (rendermode == render_opengl && !cv_glshearing.value)
 		distxy = FixedMul(dist, FINECOSINE((pitch>>ANGLETOFINESHIFT) & FINEMASK));
 	else
+#endif
 		distxy = dist;
 	distz = -FixedMul(dist, FINESINE((pitch>>ANGLETOFINESHIFT) & FINEMASK));
 
@@ -3999,7 +4001,7 @@ void P_DoTimeOver(player_t *player)
 	// 	player->gradingpointnum++;
 	// 	player->exp = K_GetEXP(player);
 	// }
-	
+
 	player->pflags |= PF_NOCONTEST;
 	K_UpdatePowerLevelsFinalize(player, false);
 

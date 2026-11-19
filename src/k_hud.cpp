@@ -1335,7 +1335,10 @@ void K_ObjectTracking(trackingResult_t *result, const vector3_t *point, boolean 
 
 	// Calculate FOV adjustments.
 	fovDiff = R_FOV(cameraNum) - baseFov;
-	fov = ((baseFov - fovDiff) / 2) - (stplyr->fovadd / 2);
+	fov = ((baseFov - fovDiff) / 2);
+#ifdef HWRENDER
+	fov -= (stplyr->fovadd / 2);
+#endif
 	fovTangent = NEWTAN(FixedAngle(fov));
 
 	if (r_splitscreen == 1)

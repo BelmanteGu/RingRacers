@@ -10,9 +10,16 @@
 
 #include "rhi_gles2_platform.hpp"
 
+#include <array>
+#include <string>
+#include <sstream>
+
 #include <SDL.h>
 
+#include "../core/string.h"
+#include "../core/vector.hpp"
 #include "../cxxutil.hpp"
+#include "../doomstat.h" // mainwads
 #include "../w_wad.h"
 #include "../z_zone.h"
 
@@ -29,35 +36,81 @@ void SdlGles2Platform::present()
 	SDL_GL_SwapWindow(window);
 }
 
-std::tuple<std::string, std::string> SdlGles2Platform::find_shader_sources(rhi::PipelineProgram program)
+static std::array<srb2::String, 2> glsllist_lump_names(const char* name)
 {
-	const char* vertex_lump_name = nullptr;
-	const char* fragment_lump_name = nullptr;
-	switch (program)
+	srb2::String vertex_list_name = fmt::format("rhi_glsllist_{}_vertex.txt", name);
+	srb2::String fragment_list_name = fmt::format("rhi_glsllist_{}_fragment.txt", name);
+
+	return {std::move(vertex_list_name), std::move(fragment_list_name)};
+}
+
+static srb2::Vector<srb2::String> get_sources_from_glsllist_lump(const char* lumpname)
+{
+	size_t buffer_size;
+	if (!W_ReadShader(lumpname, &buffer_size, nullptr))
 	{
-	case rhi::PipelineProgram::kUnshaded:
-		vertex_lump_name = "rhi_glsles_vertex_unshaded";
-		fragment_lump_name = "rhi_glsles_fragment_unshaded";
-		break;
-	case rhi::PipelineProgram::kUnshadedPaletted:
-		vertex_lump_name = "rhi_glsles_vertex_unshadedpaletted";
-		fragment_lump_name = "rhi_glsles_fragment_unshadedpaletted";
-		break;
-	default:
-		std::terminate();
+		throw std::runtime_error(fmt::format("Unable to find glsllist lump {}", lumpname));
+	}
+	srb2::String glsllist_lump_data;
+	glsllist_lump_data.resize(buffer_size);
+	if (!W_ReadShader(lumpname, &buffer_size, glsllist_lump_data.data()))
+	{
+		throw std::runtime_error(fmt::format("Unable to read glsllist lump {}", lumpname));
 	}
 
-	lumpnum_t vertex_lump_num = W_GetNumForLongName(vertex_lump_name);
-	lumpnum_t fragment_lump_num = W_GetNumForLongName(fragment_lump_name);
-	size_t vertex_lump_length = W_LumpLength(vertex_lump_num);
-	size_t fragment_lump_length = W_LumpLength(fragment_lump_num);
-	void* vertex_lump = W_CacheLumpNum(vertex_lump_num, PU_CACHE);
-	void* fragment_lump = W_CacheLumpNum(fragment_lump_num, PU_CACHE);
+	std::istringstream glsllist(glsllist_lump_data);
+	srb2::Vector<srb2::String> sources;
+	for (std::string line; std::getline(glsllist, line); )
+	{
+		if (line.empty())
+		{
+			continue;
+		}
 
-	std::string vertex_shader(static_cast<const char*>(vertex_lump), vertex_lump_length);
-	std::string fragment_shader(static_cast<const char*>(fragment_lump), fragment_lump_length);
+		if (line[0] == '#')
+		{
+			continue;
+		}
 
-	return std::make_tuple(std::move(vertex_shader), std::move(fragment_shader));
+		if (line.back() == '\r')
+		{
+			line.pop_back();
+		}
+
+		// Compat: entries not ending in .glsl should append, for new shader file lookup system
+		size_t glsl_pos = line.find(".glsl");
+		if (line.size() < 5 || glsl_pos == line.npos || glsl_pos != line.size() - 5)
+		{
+			line.append(".glsl");
+		}
+
+		size_t source_lump_size;
+		if (!W_ReadShader(line.c_str(), &source_lump_size, nullptr))
+		{
+			throw std::runtime_error(fmt::format("Unable to find glsl source lump lump {}", line));
+		}
+		srb2::String source_lump;
+		source_lump.resize(source_lump_size);
+		if (!W_ReadShader(line.c_str(), &source_lump_size, source_lump.data()))
+		{
+			throw std::runtime_error(fmt::format("Unable to read glsl source lump lump {}", line));
+		}
+
+		sources.emplace_back(source_lump);
+	}
+
+	return sources;
+}
+
+std::tuple<srb2::Vector<srb2::String>, srb2::Vector<srb2::String>>
+SdlGles2Platform::find_shader_sources(const char* name)
+{
+	std::array<srb2::String, 2> glsllist_names = glsllist_lump_names(name);
+
+	srb2::Vector<srb2::String> vertex_sources = get_sources_from_glsllist_lump(glsllist_names[0].c_str());
+	srb2::Vector<srb2::String> fragment_sources = get_sources_from_glsllist_lump(glsllist_names[1].c_str());
+
+	return std::make_tuple(std::move(vertex_sources), std::move(fragment_sources));
 }
 
 rhi::Rect SdlGles2Platform::get_default_framebuffer_dimensions()

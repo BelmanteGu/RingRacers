@@ -74,12 +74,12 @@ static lua_CFunction liblist[] = {
 static void *LUA_Alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 {
 	(void)ud;
+	(void)osize;
 	if (nsize == 0) {
-		if (osize != 0)
-			Z_Free(ptr);
+		free(ptr);
 		return NULL;
 	} else
-		return Z_Realloc(ptr, nsize, PU_LUA, NULL);
+		return realloc(ptr, nsize);
 }
 
 // Panic function Lua calls when there's an unprotected error.
@@ -479,28 +479,35 @@ void LUA_ClearState(void)
 	CONS_Printf(M_GetText("Pardon me while I initialize the Lua scripting interface...\n"));
 
 	// allocate state
+	I_OutputMsg("Lua: lua_newstate\n");
 	L = lua_newstate(LUA_Alloc, NULL);
+	I_OutputMsg("Lua: lua_atpanic\n");
 	lua_atpanic(L, LUA_Panic);
 
 	// open base libraries
+	I_OutputMsg("Lua: luaL_openlibs\n");
 	luaL_openlibs(L);
 	lua_settop(L, 0);
 
 	// make LREG_VALID table for all pushed userdata cache.
+	I_OutputMsg("Lua: LREG_VALID\n");
 	lua_newtable(L);
 	lua_setfield(L, LUA_REGISTRYINDEX, LREG_VALID);
 
 	// make LREG_METATABLES table for all registered metatables
+	I_OutputMsg("Lua: LREG_METATABLES\n");
 	lua_newtable(L);
 	lua_setfield(L, LUA_REGISTRYINDEX, LREG_METATABLES);
 
 	// open srb2 libraries
 	for(i = 0; liblist[i]; i++) {
+		I_OutputMsg("Lua: liblist[%d]\n", i);
 		lua_pushcfunction(L, liblist[i]);
 		lua_call(L, 0, 0);
 	}
 
 	// lock the global namespace
+	I_OutputMsg("Lua: lock namespace\n");
 	lua_getmetatable(L, LUA_GLOBALSINDEX);
 		lua_pushcfunction(L, setglobals);
 		lua_setfield(L, -2, "__newindex");
@@ -509,6 +516,7 @@ void LUA_ClearState(void)
 	lua_pop(L, 1);
 
 	// lua state is ready!
+	I_OutputMsg("Lua: state ready\n");
 	gL = L;
 }
 

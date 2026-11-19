@@ -11,6 +11,10 @@
 #ifndef __SRB2_SDL_RHI_GLES2_PLATFORM_HPP__
 #define __SRB2_SDL_RHI_GLES2_PLATFORM_HPP__
 
+#include <tuple>
+
+#include "../core/string.h"
+#include "../core/vector.hpp"
 #include "../rhi/gles2/gles2_rhi.hpp"
 #include "../rhi/rhi.hpp"
 
@@ -26,7 +30,8 @@ struct SdlGles2Platform final : public Gles2Platform
 	virtual ~SdlGles2Platform();
 
 	virtual void present() override;
-	virtual std::tuple<std::string, std::string> find_shader_sources(PipelineProgram program) override;
+	virtual std::tuple<Vector<srb2::String>, Vector<srb2::String>>
+	find_shader_sources(const char* name) override;
 	virtual Rect get_default_framebuffer_dimensions() override;
 };
 

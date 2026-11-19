@@ -22,4 +22,15 @@ Win32_LIB_ASM_Release
 /make
 /bin
 /build
+/build-android-*
+/android/.gradle
+/android/.cxx
+/android/**/.cxx
+/android/**/build
+/android/local.properties
 /CMakeUserPresets.json
+*.log
+*.pid
+screenshot*.png
+unique_errors.txt
+.vscode/

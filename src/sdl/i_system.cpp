@@ -58,6 +58,10 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #include <fcntl.h>
 #endif
 
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+
 #include <stdio.h>
 #ifdef _WIN32
 #include <conio.h>
@@ -106,7 +110,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #endif
 #endif
 
-#if (defined (__unix__) && !defined (_MSDOS)) || (defined (UNIXCOMMON) && !defined(__APPLE__))
+#if !defined(__ANDROID__) && ((defined (__unix__) && !defined (_MSDOS)) || (defined (UNIXCOMMON) && !defined(__APPLE__)))
 #include <errno.h>
 #include <sys/wait.h>
 #define NEWSIGNALHANDLER
@@ -141,7 +145,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #include <errno.h>
 #endif
 
-#if (defined(__linux__) && defined(__USE_GNU)) || (defined (__unix__) || defined (UNIXCOMMON)) && !defined(__linux__) || defined(__APPLE__)
+#if !defined(NOEXECINFO) && !defined(__ANDROID__) && ((defined(__linux__) && defined(__USE_GNU)) || (defined (__unix__) || defined (UNIXCOMMON)) && !defined(__linux__) || defined(__APPLE__))
 #include <execinfo.h>
 #include <time.h>
 #define UNIXBACKTRACE
@@ -1077,6 +1081,10 @@ void I_OutputMsg(const char *fmt, ...)
 
 	len = strlen(txt);
 
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "SRB2", "%s", txt);
+#endif
+
 #ifdef LOGMESSAGES
 	if (logstream)
 	{
@@ -1985,6 +1993,9 @@ FUNCIERROR void ATTRNORETURN I_Error(const char *error, ...)
 	va_start(argptr, error);
 	vsprintf(buffer, error, argptr);
 	va_end(argptr);
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_ERROR, "SRB2", "I_Error: %s", buffer);
+#endif
 	I_OutputMsg("\nI_Error(): %s\n", buffer);
 	// ---
 
@@ -2373,6 +2384,10 @@ static const char *locateWad(void)
 {
 	const char *envstr;
 	const char *WadPath;
+	const int waddirparm = M_CheckParm("-waddir");
+
+	if (waddirparm && waddirparm + 1 < myargc && isWadPathOk(myargv[waddirparm + 1]))
+		return myargv[waddirparm + 1];
 
 	I_OutputMsg("RINGRACERSWADDIR");
 	// does RINGRACERSWADDIR exist?

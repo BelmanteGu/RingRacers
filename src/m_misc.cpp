@@ -53,6 +53,7 @@
 #include "command.h" // cv_execversion
 
 #include "m_anigif.h"
+#include "am_map.h"
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"
 #include "m_avrecorder.hpp"

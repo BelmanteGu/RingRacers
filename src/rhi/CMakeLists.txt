@@ -6,4 +6,8 @@ target_sources(SRB2SDL2 PRIVATE
 	shader_load_context.hpp
 )
 
-add_subdirectory(gl2)
+if(ANDROID)
+	add_subdirectory(gles2)
+else()
+	add_subdirectory(gl2)
+endif()

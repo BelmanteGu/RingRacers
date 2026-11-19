@@ -403,6 +403,15 @@ void SCR_CheckDefaultMode(void)
 			cv_scr_height.value, cv_scr_depth.value);
 		// see note above
 		setmodeneeded = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value) + 1;
+#if defined(__ANDROID__) || defined(ANDROID)
+		{
+			// Stock 640x400 (or a mode that no longer exists) -> native ultrawide.
+			extern INT32 android_native_mode;
+			if (android_native_mode >= 0 && (setmodeneeded == 0
+				|| (cv_scr_width.value == 640 && cv_scr_height.value == 400)))
+				setmodeneeded = android_native_mode + 1;
+		}
+#endif
 	}
 
 	if (cv_renderer.value != (signed)rendermode)

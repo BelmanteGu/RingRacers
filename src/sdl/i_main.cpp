@@ -45,7 +45,7 @@
 #ifdef SDLMAIN
 #include "SDL_main.h"
 #elif defined(FORCESDLMAIN)
-extern int SDL_main(int argc, char *argv[]);
+extern "C" int SDL_main(int argc, char *argv[]);
 #endif
 
 #ifdef LOGMESSAGES
@@ -222,7 +222,7 @@ static void walk_exception_stack(srb2::String& accum, const std::exception& ex, 
 #endif
 
 #ifdef FORCESDLMAIN
-int SDL_main(int argc, char **argv)
+extern "C" __attribute__((visibility("default"))) int SDL_main(int argc, char **argv)
 #else
 int main(int argc, char **argv)
 #endif

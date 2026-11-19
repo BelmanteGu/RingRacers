@@ -1,6 +1,12 @@
 include(CheckCXXCompilerFlag)
 
-add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
+if(ANDROID)
+	add_library(SRB2SDL2 SHARED)
+else()
+	add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32)
+endif()
+
+target_sources(SRB2SDL2 PRIVATE
 	comptime.c
 	cxxutil.hpp
 	md5.c

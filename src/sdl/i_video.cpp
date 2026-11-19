@@ -22,8 +22,13 @@
 #include <imgui.h>
 
 #include "../rhi/rhi.hpp"
+#ifdef ANDROID
+#include "../rhi/gles2/gles2_rhi.hpp"
+#include "rhi_gles2_platform.hpp"
+#else
 #include "../rhi/gl2/gl2_rhi.hpp"
 #include "rhi_gl2_platform.hpp"
+#endif
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4214 4244)
@@ -139,6 +144,7 @@ static       SDL_bool    borderlesswindow = SDL_FALSE;
 
 // SDL2 vars
 SDL_Window   *window;
+static SDL_GLContext sdlglcontext = nullptr;
 static SDL_bool      havefocus = SDL_TRUE;
 static const char *fallback_resolution_name = "Fallback";
 
@@ -168,6 +174,34 @@ static INT32 windowedModes[MAXWINMODES][2] =
 	{ 320, 240}, // 1.33,1.00
 	{ 320, 200}, // 1.60,1.00
 };
+
+#if defined(__ANDROID__) || defined(ANDROID)
+// Ultrawide: replace three rarely-used 4:3/square slots with modes that match
+// the phone's real aspect ratio (19.5:9, 20:9, 21:9...), so the 3D view fills
+// the whole screen instead of being stretched or pillarboxed.
+extern "C" { INT32 android_native_mode = -1; }
+static void Impl_SetupNativeAspectModes(void)
+{
+	SDL_DisplayMode dm;
+	if (SDL_GetDesktopDisplayMode(0, &dm) != 0 || dm.w <= 0 || dm.h <= 0)
+		return;
+	const int lw = std::max(dm.w, dm.h);
+	const int lh = std::min(dm.w, dm.h);
+	static const int heights[3] = {360, 480, 540};
+	static const int slots[3]   = {12, 11, 3}; // 1024x1024, 1152x864, 1600x1200
+	for (int i = 0; i < 3; i++)
+	{
+		int w = (int)((float)heights[i] * lw / lh + 0.5f);
+		w &= ~1;
+		if (w > MAXVIDWIDTH) w = MAXVIDWIDTH;
+		windowedModes[slots[i]][0] = w;
+		windowedModes[slots[i]][1] = heights[i];
+	}
+	android_native_mode = slots[1]; // 480p native aspect is the default
+	CONS_Printf("Ultrawide: display %dx%d -> default %dx%d\n", lw, lh,
+		windowedModes[android_native_mode][0], windowedModes[android_native_mode][1]);
+}
+#endif
 
 static void Impl_VideoSetupBuffer(void);
 static SDL_bool Impl_CreateWindow(SDL_bool fullscreen);
@@ -1340,13 +1374,17 @@ static SDL_bool Impl_CreateContext(void)
 	}
 #endif
 
-	// RHI always uses OpenGL 2.0 (for now)
-
 	if (!sdlglcontext)
 	{
 		SDL_GL_ResetAttributes();
+#ifdef ANDROID
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#else
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+#endif
 		sdlglcontext = SDL_GL_CreateContext(window);
 	}
 	if (sdlglcontext == NULL)
@@ -1359,9 +1397,15 @@ static SDL_bool Impl_CreateContext(void)
 
 	if (!g_rhi)
 	{
+#ifdef ANDROID
+		std::unique_ptr<rhi::SdlGles2Platform> platform = std::make_unique<rhi::SdlGles2Platform>();
+		platform->window = window;
+		g_rhi = std::make_unique<rhi::Gles2Rhi>(std::move(platform), reinterpret_cast<rhi::Gles2LoadFunc>(SDL_GL_GetProcAddress));
+#else
 		std::unique_ptr<rhi::SdlGl2Platform> platform = std::make_unique<rhi::SdlGl2Platform>();
 		platform->window = window;
 		g_rhi = std::make_unique<rhi::Gl2Rhi>(std::move(platform), reinterpret_cast<rhi::GlLoadFunc>(SDL_GL_GetProcAddress));
+#endif
 		g_rhi_generation += 1;
 	}
 
@@ -1479,8 +1523,12 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 	if (window != NULL)
 		return SDL_FALSE;
 
+#if defined(ANDROID) || defined(__ANDROID__)
+	flags |= SDL_WINDOW_FULLSCREEN;
+#else
 	if (fullscreen)
 		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+#endif
 
 	if (borderlesswindow)
 		flags |= SDL_WINDOW_BORDERLESS;
@@ -1594,6 +1642,9 @@ void I_StartupGraphics(void)
 		rendermode = chosenrendermode;
 
 	borderlesswindow = M_CheckParm("-borderless") ? SDL_TRUE : SDL_FALSE;
+#if defined(__ANDROID__) || defined(ANDROID)
+	Impl_SetupNativeAspectModes();
+#endif
 
 	VID_Command_ModeList_f();
 

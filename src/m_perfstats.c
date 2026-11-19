@@ -181,7 +181,8 @@ static void M_DrawRenderStats(void)
 		{0}
 	};
 
-	perfstatrow_t opengltime_row[] = {
+	#ifdef HWRENDER
+		perfstatrow_t opengltime_row[] = {
 		{"skybox ", "Skybox render: ", &ps_hw_skyboxtime},
 		{"bsptime", "RenderBSPNode: ", &ps_bsptime},
 		{"nodesrt", "Drwnode sort:  ", &ps_hw_nodesorttime},
@@ -190,7 +191,8 @@ static void M_DrawRenderStats(void)
 		{"sprdraw", "Sprite render: ", &ps_hw_spritedrawtime},
 		{"other  ", "Other:         ", &extrarendertime},
 		{0}
-	};
+		};
+	#endif
 
 	perfstatrow_t softwaretime_row[] = {
 		{"bsptime", "RenderBSPNode: ", &ps_bsptime},
@@ -222,31 +224,35 @@ static void M_DrawRenderStats(void)
 		{0}
 	};
 
-	perfstatrow_t batchtime_row[] = {
+	#ifdef HWRENDER
+		perfstatrow_t batchtime_row[] = {
 		{"batsort", "Batch sort:  ", &ps_hw_batchsorttime},
 		{"batdraw", "Batch render:", &ps_hw_batchdrawtime},
 		{0}
-	};
+		};
 
-	perfstatrow_t batchcount_row[] = {
+		perfstatrow_t batchcount_row[] = {
 		{"polygon", "Polygons:  ", &ps_hw_numpolys},
 		{"vertex ", "Vertices:  ", &ps_hw_numverts},
 		{0}
-	};
+		};
 
-	perfstatrow_t batchcalls_row[] = {
+		perfstatrow_t batchcalls_row[] = {
 		{"drwcall", "Draw calls:", &ps_hw_numcalls},
 		{"shaders", "Shaders:   ", &ps_hw_numshaders},
 		{"texture", "Textures:  ", &ps_hw_numtextures},
 		{"polyflg", "Polyflags: ", &ps_hw_numpolyflags},
 		{"colors ", "Colors:    ", &ps_hw_numcolors},
 		{0}
-	};
+		};
+	#endif
 
 	perfstatcol_t      frametime_col =  {20,  20, V_YELLOWMAP,      frametime_row};
 	perfstatcol_t rendercalltime_col =  {20,  20, V_YELLOWMAP, rendercalltime_row};
 
+#ifdef HWRENDER
 	perfstatcol_t     opengltime_col =  {24,  24, V_YELLOWMAP,     opengltime_row};
+#endif
 	perfstatcol_t   softwaretime_col =  {24,  24, V_YELLOWMAP,   softwaretime_row};
 
 	perfstatcol_t     uiswaptime_col =  {20,  20, V_YELLOWMAP,     uiswaptime_row};
@@ -254,10 +260,12 @@ static void M_DrawRenderStats(void)
 
 	perfstatcol_t    rendercalls_col =  {90, 115, V_BLUEMAP,      rendercalls_row};
 
+#ifdef HWRENDER
 	perfstatcol_t      batchtime_col =  {90, 115, V_REDMAP,         batchtime_row};
 
 	perfstatcol_t     batchcount_col = {155, 200, V_PURPLEMAP,     batchcount_row};
 	perfstatcol_t     batchcalls_col = {220, 200, V_PURPLEMAP,     batchcalls_row};
+#endif
 
 
 	boolean rendering = G_GamestateUsesLevel();

@@ -253,11 +253,11 @@ static const struct {
 	{META_FOOTSTEP,     "t_footstep_t"},
 	{META_OVERLAY,      "t_overlay_t"},
 	{META_TERRAIN,      "terrain_t"},
-	
+
 	{META_POWERUPVARS,	"powerupvars_t"},
 	{META_ICECUBEVARS,	"icecubevars_t"},
 	{META_SKYBOX,		"skybox_t"},
-	
+
 	{META_CUP,     					"cupheader_t"},
 	{META_GPRANK,	  	  			"gprank_t"},
 	{META_GPRANKLEVEL,	  			"gprank_level_t"},
@@ -487,7 +487,7 @@ static int lib_mMusicRemap(lua_State *L)
 	{
 		return LUA_ErrNoTune(L, tune_id);
 	}
-	
+
 	// Do not allow Lua to remap Stereo Mode tunes.
 	if (strlen(tune_id) > 5
 	    && toupper(tune_id[0]) == 'S' && toupper(tune_id[1]) == 'T' && toupper(tune_id[2]) == 'E' && toupper(tune_id[3]) == 'R' && toupper(tune_id[4]) == 'E')
@@ -4006,7 +4006,7 @@ static int lib_kMomentumAngle(lua_State *L)
 }
 
 static int lib_kPvPAmpReward(lua_State *L)
-{	
+{
 	UINT32 award = luaL_checkinteger(L, 1);
 	player_t *attacker = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
 	player_t *defender = *((player_t **)luaL_checkudata(L, 3, META_PLAYER));
@@ -6155,7 +6155,7 @@ static int lib_kSetNameForBot(lua_State *L)
 
 	if (!IsPlayerNameGood(modifiedname))
 		return luaL_error(L, "Invalid bot name - it must be between %d and %d characters of length, "
-			"not start with a space, @ or ~ characters, and it must be composed of valid ASCII characters.", 1, MAXPLAYERNAME);	
+			"not start with a space, @ or ~ characters, and it must be composed of valid ASCII characters.", 1, MAXPLAYERNAME);
 
 	K_SetNameForBot(player-players, modifiedname);
 
@@ -7207,18 +7207,39 @@ static luaL_Reg lib[] = {
 
 int LUA_BaseLib(lua_State *L)
 {
+	I_OutputMsg("LUA_BaseLib: start\n");
 	// Set metatable for string
 	lua_pushliteral(L, "");  // dummy string
-	lua_getmetatable(L, -1);  // get string metatable
-	lua_pushcfunction(L,lib_concat); // push concatination function
-	lua_setfield(L,-2,"__add"); // ... store it as mathematical addition
-	lua_pop(L, 2); // pop metatable and dummy string
+	if (lua_getmetatable(L, -1))  // get string metatable
+	{
+		I_OutputMsg("LUA_BaseLib: getmetatable ok\n");
+		lua_pushcfunction(L, lib_concat); // push concatination function
+		lua_setfield(L, -2, "__add"); // ... store it as mathematical addition
+		lua_pop(L, 2); // pop metatable and dummy string
+	}
+	else
+	{
+		I_OutputMsg("LUA_BaseLib: no string metatable, creating\n");
+		lua_createtable(L, 0, 1);
+		lua_pushcfunction(L, lib_concat);
+		lua_setfield(L, -2, "__add");
+		lua_setmetatable(L, -2);
+		lua_pop(L, 1); // pop dummy string
+	}
 
+	I_OutputMsg("LUA_BaseLib: LREG_EXTVARS\n");
 	lua_newtable(L);
 	lua_setfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
 
+	I_OutputMsg("LUA_BaseLib: registering lib functions\n");
 	// Set global functions
-	lua_pushvalue(L, LUA_GLOBALSINDEX);
-	luaL_register(L, NULL, lib);
+	for (int k = 0; lib[k].name; k++)
+	{
+		I_OutputMsg("LUA_BaseLib: lib[%d] = %s\n", k, lib[k].name);
+		lua_pushcfunction(L, lib[k].func);
+		lua_setfield(L, LUA_GLOBALSINDEX, lib[k].name);
+		I_OutputMsg("LUA_BaseLib: setfield %d ok\n", k);
+	}
+	I_OutputMsg("LUA_BaseLib: done\n");
 	return 0;
 }

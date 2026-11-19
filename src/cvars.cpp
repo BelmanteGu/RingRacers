@@ -332,7 +332,11 @@ consvar_t cv_voicevolume = Player("voicevolume", "100").min_max(0, 100);
 	consvar_t cv_discordstreamer = Player("discordstreamer", "Off").on_off();
 #endif
 
+#if defined(ANDROID) || defined(__ANDROID__)
+consvar_t cv_drawdist = Player("drawdist", "Short").values({
+#else
 consvar_t cv_drawdist = Player("drawdist", "Normal").values({
+#endif
 	{3072,  "Shortest"},
 	{4096,  "Shorter"},
 	{6144,  "Short"},
@@ -344,7 +348,11 @@ consvar_t cv_drawdist = Player("drawdist", "Normal").values({
 	{0,     "Infinite"},
 });
 
+#if defined(ANDROID) || defined(__ANDROID__)
+consvar_t cv_drawdist_precip = Player("drawdist_precip", "Short").values({
+#else
 consvar_t cv_drawdist_precip = Player("drawdist_precip", "Normal").values({
+#endif
 	{256,  "Shortest"},
 	{512,  "Shorter"},
 	{768,  "Short"},
@@ -392,7 +400,11 @@ void ItemFinder_OnChange(void);
 consvar_t cv_itemfinder = Player("itemfinder", "Off").flags(CV_NOSHOWHELP).on_off().onchange(ItemFinder_OnChange).dont_save();
 
 consvar_t cv_maxportals = Player("maxportals", "2").values({{0, "MIN"}, {12, "MAX"}}); // lmao rendering 32 portals, you're a card
+#if defined(ANDROID) || defined(__ANDROID__)
+consvar_t cv_menuframeskip = Player("menuframeskip", "35").values({
+#else
 consvar_t cv_menuframeskip = Player("menuframeskip", "Off").values({
+#endif
 	{35, "MIN"},
 	{144, "MAX"},
 	{0, "Off"},
@@ -1500,6 +1512,12 @@ consvar_t cv_voice_allowservervoice = NetVar("voice_allowservervoice", "Off")
 	consvar_t cv_glskydome = OpenGL("gr_skydome", "On").on_off();
 	consvar_t cv_glsolvetjoin = OpenGL("gr_solvetjoin", "On").on_off().dont_save();
 	consvar_t cv_glspritebillboarding = OpenGL("gr_spritebillboarding", "On").on_off();
+#else
+	consvar_t cv_glshaders = CVAR_INIT("gr_shaders", "Off", CV_HIDDEN, nullptr, nullptr);
+	consvar_t cv_glanisotropicmode = CVAR_INIT("gr_anisotropicmode", "Off", CV_HIDDEN, nullptr, nullptr);
+	consvar_t cv_glmodels = CVAR_INIT("gr_models", "Off", CV_HIDDEN, nullptr, nullptr);
+	consvar_t cv_glshearing = CVAR_INIT("gr_shearing", "Off", CV_HIDDEN, nullptr, nullptr);
+	consvar_t cv_glspritebillboarding = CVAR_INIT("gr_spritebillboarding", "Off", CV_HIDDEN, nullptr, nullptr);
 #endif // HWRENDER
 
 
