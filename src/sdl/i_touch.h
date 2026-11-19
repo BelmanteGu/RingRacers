@@ -52,6 +52,10 @@ void I_TouchRegisterMenuItem(INT32 item, INT32 x, INT32 y, INT32 w, INT32 h);
 // on-screen D-pad / OK move over its keys instead of typing letters.
 boolean I_TouchOwnsInput(void);
 
+// Width in pixels taken by the race controls on each side (0 when hidden),
+// so the HUD can step inward instead of being covered.
+void I_TouchHudInsets(INT32 *left, INT32 *right);
+
 // Whether touch controls are compiled in and enabled right now.
 boolean I_TouchActive(void);
 

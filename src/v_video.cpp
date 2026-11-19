@@ -24,6 +24,7 @@
 #include "p_local.h" // stplyr
 #include "g_game.h" // players
 #include "v_video.h"
+#include "sdl/i_touch.h"
 #include "st_stuff.h"
 #include "hu_stuff.h"
 #include "f_finale.h"
@@ -570,16 +571,33 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 			*y += (screenheight - baseheight) / 2;
 	}
 
-	if (v_safearea_active && cv_hudsafearea.value && r_splitscreen == 0)
+	if (v_safearea_active && r_splitscreen == 0)
 	{
+		// Touch controls own the lower-left / right edges during a race:
+		// HUD pieces snapped there (faces, laps/rings/speed on the left;
+		// minimap, position on the right) step inward so nothing is covered.
+		// The item box and the timer at the top stay in their corners.
+		INT32 touch_left = 0, touch_right = 0;
+		I_TouchHudInsets(&touch_left, &touch_right);
+		const INT32 base_y = dupy ? (*y / dupy) : *y;
+		INT32 safe_l = cv_hudsafearea.value ? (INT32)(v_safearea[0] * vid.width) : 0;
+		INT32 safe_r = cv_hudsafearea.value ? (INT32)(v_safearea[2] * vid.width) : 0;
+		if (touch_left && base_y >= 80)
+			safe_l = std::max(safe_l, touch_left);
+		if (touch_right && base_y >= 40)
+			safe_r = std::max(safe_r, touch_right);
+
 		if (options & V_SNAPTOLEFT)
-			*x += (INT32)(v_safearea[0] * vid.width);
+			*x += safe_l;
 		else if (options & V_SNAPTORIGHT)
-			*x -= (INT32)(v_safearea[2] * vid.width);
-		if (options & V_SNAPTOTOP)
-			*y += (INT32)(v_safearea[1] * vid.height);
-		else if (options & V_SNAPTOBOTTOM)
-			*y -= (INT32)(v_safearea[3] * vid.height);
+			*x -= safe_r;
+		if (cv_hudsafearea.value)
+		{
+			if (options & V_SNAPTOTOP)
+				*y += (INT32)(v_safearea[1] * vid.height);
+			else if (options & V_SNAPTOBOTTOM)
+				*y -= (INT32)(v_safearea[3] * vid.height);
+		}
 	}
 
 	if (options & V_SPLITSCREEN)

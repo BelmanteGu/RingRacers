@@ -46,6 +46,7 @@
 #include "../k_hud.h"
 #include "../k_menu.h"
 #include "../keys.h"
+#include "../r_draw.h"
 #include "../s_sound.h"
 #include "../screen.h"
 #include "../v_video.h"
@@ -67,6 +68,7 @@ enum class Kind
 
 struct Element
 {
+	// (shoulder != nullptr) => drawn as a round pad with the L/R glyph on it
 	Kind kind;
 	float cx, cy;     // centre, screen pixels (vid.width x vid.height)
 	float d;          // visual diameter, pixels
@@ -74,6 +76,7 @@ struct Element
 	patch_t **patch;  // [0] = up, [1] = pressed (game's TLB_* graphics)
 	const char *label;
 	bool primary;     // drawn a bit brighter (GO / OK)
+	UINT16 padcolor = 0; // shoulder buttons: colour of the round pad
 };
 
 struct Finger
@@ -164,6 +167,10 @@ void add(Kind kind, float cx, float cy, float d, INT32 key, patch_t **patch, con
 	if (cv_touch_lefty.value)
 		cx = W() - cx;
 	g_layout.push_back({kind, cx, cy, d * scale, key, patch, label, primary});
+	if (patch == kp_button_l[0])
+		g_layout.back().padcolor = SKINCOLOR_PURPLE;
+	else if (patch == kp_button_r[0])
+		g_layout.back().padcolor = SKINCOLOR_JET;
 }
 
 void build_layout()
@@ -196,16 +203,16 @@ void build_layout()
 
 	// Race: big GO under the thumb, DRIFT next to it (sliding a thumb
 	// between them holds both), ITEM above, BRAKE on the far side.
-	add(Kind::button, R(0.13f), B(0.15f), 0.24f * u, kb(gc_a, 'a'), kp_button_a[0], "GO", true);
-	add(Kind::button, R(0.40f), B(0.10f), 0.20f * u, kb(gc_r, 's'), kp_button_r[0], "DRIFT");
-	add(Kind::button, R(0.30f), B(0.40f), 0.17f * u, kb(gc_l, KEY_SPACE), kp_button_l[0], "ITEM");
-	add(Kind::button, R(0.06f), B(0.44f), 0.15f * u, kb(gc_x, 'd'), kp_button_x[0], "BRAKE");
-	add(Kind::button, R(0.63f), B(0.08f), 0.14f * u, kb(gc_c, 'q'), kp_button_c[0], "SPIN");
-	add(Kind::button, R(0.58f), B(0.33f), 0.12f * u, kb(gc_b, KEY_LSHIFT), kp_button_b[0], "LOOK");
-	add(Kind::button, R(0.10f), B(0.68f), 0.12f * u, kb(gc_y, 'v'), kp_button_y[0], "BAIL");
+	add(Kind::button, R(0.12f), B(0.14f), 0.22f * u, kb(gc_a, 'a'), kp_button_a[0], "GO", true);
+	add(Kind::button, R(0.36f), B(0.08f), 0.18f * u, kb(gc_r, 's'), kp_button_r[0], "DRIFT");
+	add(Kind::button, R(0.30f), B(0.36f), 0.15f * u, kb(gc_l, KEY_SPACE), kp_button_l[0], "ITEM");
+	add(Kind::button, R(0.07f), B(0.42f), 0.14f * u, kb(gc_x, 'd'), kp_button_x[0], "BRAKE");
+	add(Kind::button, R(0.53f), B(0.30f), 0.12f * u, kb(gc_c, 'q'), kp_button_c[0], "SPIN");
+	add(Kind::button, R(0.57f), B(0.06f), 0.11f * u, kb(gc_b, KEY_LSHIFT), kp_button_b[0], "LOOK");
+	add(Kind::button, R(0.10f), B(0.63f), 0.11f * u, kb(gc_y, 'v'), kp_button_y[0], "BAIL");
+	add(Kind::button, R(0.33f), B(0.60f), 0.11f * u, kb(gc_z, 'z'), kp_button_z[0], "ACTION");
 	if (netgame)
 	{
-		add(Kind::button, R(0.33f), B(0.66f), 0.11f * u, kb(gc_z, 'z'), kp_button_z[0], "VOTE");
 		add(Kind::button, w * 0.5f - 0.10f * u, 0.08f * u, 0.10f * u, kb(gc_talk, 't'), kp_button_y[0], "CHAT");
 	}
 	add(Kind::button, w * 0.5f + (netgame ? 0.10f * u : 0.f), 0.08f * u, 0.10f * u, kb(gc_start, KEY_ESCAPE), kp_button_start[0], "PAUSE");
@@ -393,7 +400,7 @@ INT32 trans_flags()
 
 // Base-space drawing snapped to the top-left corner, so 1 base unit is
 // exactly vid.dupx pixels from the screen's left/top edge.
-void draw_patch_centered(float px, float py, float d, patch_t *p, INT32 flags)
+void draw_patch_centered(float px, float py, float d, patch_t *p, INT32 flags, const UINT8 *colormap = NULL)
 {
 	if (!p)
 		return;
@@ -402,7 +409,7 @@ void draw_patch_centered(float px, float py, float d, patch_t *p, INT32 flags)
 	const fixed_t scale = FloatToFixed(d / (pw * (float)dup));
 	const fixed_t x = FloatToFixed(px / dup) - FixedMul((pw / 2 - SHORT(p->leftoffset)) * FRACUNIT, scale);
 	const fixed_t y = FloatToFixed(py / dup) - FixedMul((ph / 2 - SHORT(p->topoffset)) * FRACUNIT, scale);
-	V_DrawFixedPatch(x, y, scale, V_SNAPTOLEFT | V_SNAPTOTOP | flags, p, NULL);
+	V_DrawFixedPatch(x, y, scale, V_SNAPTOLEFT | V_SNAPTOTOP | flags, p, colormap);
 }
 
 void draw_label(float px, float py, const char *text, INT32 flags)
@@ -424,6 +431,26 @@ extern "C" {
 boolean I_TouchActive(void)
 {
 	return overlay_visible();
+}
+
+void I_TouchHudInsets(INT32 *left, INT32 *right)
+{
+	*left = *right = 0;
+	if (!overlay_visible() || in_menu_context())
+		return;
+	if (g_layout.empty() || g_menu_layout)
+		build_layout();
+	const float pad = 0.02f * H();
+	for (const Element &e : g_layout)
+	{
+		if (e.cy - e.d * 0.5f < 0.15f * H())
+			continue; // top-centre buttons (pause/chat) don't push the HUD
+		const float r = e.d * (e.kind == Kind::dpad ? 0.5f : 0.5f);
+		if (e.cx < W() * 0.5f)
+			*left = std::max<INT32>(*left, (INT32)(e.cx + r + pad));
+		else
+			*right = std::max<INT32>(*right, (INT32)(W() - (e.cx - r) + pad));
+	}
 }
 
 boolean I_TouchOwnsInput(void)
@@ -557,7 +584,17 @@ void I_TouchDrawer(void)
 			{
 				const bool down = e.kind == Kind::button && key_held(e.key);
 				const INT32 t = (down || e.primary) ? std::max(0, trans - (2 << V_ALPHASHIFT)) : trans;
-				draw_patch_centered(e.cx, e.cy, e.d * (down ? 0.92f : 1.f), e.patch[down ? 1 : 0], down ? 0 : t);
+				const float dd = e.d * (down ? 0.92f : 1.f);
+				if (e.padcolor)
+				{
+					// Round pad in the game's button style (the Z disc, recoloured),
+					// with the shoulder glyph laid across it so it reads as L / R.
+					const UINT8 *cm = R_GetTranslationColormap(TC_RAINBOW, (skincolornum_t)e.padcolor, GTC_CACHE);
+					draw_patch_centered(e.cx, e.cy, dd, kp_button_z[0][down ? 1 : 0], down ? 0 : t, cm);
+					draw_patch_centered(e.cx, e.cy + dd * 0.04f, dd * 0.92f, e.patch[down ? 1 : 0], down ? 0 : t);
+				}
+				else
+					draw_patch_centered(e.cx, e.cy, dd, e.patch[down ? 1 : 0], down ? 0 : t);
 				const float ly = e.cy + e.d * 0.52f;
 				const bool above = ly + 9.f * vid.dupy > H();
 				draw_label(e.cx, above ? e.cy - e.d * 0.52f - 8.f * vid.dupy : ly, e.label, (down ? V_YELLOWMAP : 0) | t);
@@ -577,6 +614,7 @@ void I_TouchNotifyOtherInput(void) {}
 void I_TouchDrawer(void) {}
 void I_TouchTicker(void) {}
 void I_TouchRegisterMenuItem(INT32, INT32, INT32, INT32, INT32) {}
+void I_TouchHudInsets(INT32 *l, INT32 *r) { *l = *r = 0; }
 boolean I_TouchActive(void) { return false; }
 boolean I_TouchOwnsInput(void) { return false; }
 }

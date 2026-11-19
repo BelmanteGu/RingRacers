@@ -34,6 +34,8 @@
 #include "sdl/ogl_sdl.h"
 #include "st_stuff.h" // kill
 
+extern "C" boolean v_safearea_active;
+
 #ifdef HAVE_SDL
 #include <SDL.h>
 extern SDL_Window *window;
@@ -125,7 +127,11 @@ static void temp_legacy_finishupdate_draws()
 	if (st_overlay)
 	{
 		if (cv_songcredits.value)
-			HU_DrawSongCredits();
+			{
+				v_safearea_active = true; // keep the song credit out of the curved corners
+				HU_DrawSongCredits();
+				v_safearea_active = false;
+			}
 
 		if (cv_ticrate.value)
 			SCR_DisplayTicRate();

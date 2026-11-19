@@ -172,9 +172,13 @@ public final class GameActivity extends SDLActivity {
             }
             // A box hugging both edges clears a corner of radius r once it is
             // r*(1-1/sqrt2) ~ 0.3r in on each axis.
-            int cornerPad = (int) (corner * 0.3f);
-            side = Math.max(side, cornerPad);
-            vert = Math.max(vert, cornerPad);
+            // Text and boxes near a curved corner need more than the bare
+            // geometric clearance to look right: use about half the radius,
+            // plus a little breathing room everywhere.
+            int cornerPad = (int) (corner * 0.55f);
+            int breath = (int) (h * 0.012f);
+            side = Math.max(side, cornerPad) + breath;
+            vert = Math.max(vert, cornerPad) + breath;
             if (side == 0) side = (int) (w * sideFallback);
             int fs = Math.round(side * 10000f / w), fv = Math.round(vert * 10000f / h);
             return new int[]{fs, fv, fs, fv};
