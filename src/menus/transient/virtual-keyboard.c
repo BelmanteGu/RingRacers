@@ -11,6 +11,7 @@
 /// \brief Keyboard input
 
 #include "../../k_menu.h"
+#include "../../sdl/i_touch.h"
 #include "../../s_sound.h"
 #include "../../console.h" // CON_ShiftChar
 #include "../../i_system.h" // I_Clipboard funcs
@@ -417,5 +418,7 @@ void M_OpenVirtualKeyboard(size_t cachelen, vkb_query_fn_t queryfn, menu_t *dumm
 void M_SwitchVirtualKeyboard(boolean gamepad)
 {
 	extern consvar_t cv_debugvirtualkeyboard;
+	if (I_TouchOwnsInput())
+		gamepad = true; // touch drives the on-screen keyboard like a controller
 	menutyping.keyboardtyping = cv_debugvirtualkeyboard.value ? false : !gamepad;
 }

@@ -671,6 +671,8 @@ static void M_DrawMenuTyping(void)
 
 				INT32 width = (buttonwidth * buttonspacing) - 1;
 
+				I_TouchRegisterMenuItem(TOUCH_VKB_ITEM(i, j), x, y, width, BUTTONHEIGHT);
+
 				// highlight:
 				/*if (menutyping.keyboardtyping)
 				{

@@ -43,6 +43,15 @@ void I_TouchTicker(void);
 // regular menu drawing (no snap flags).
 void I_TouchRegisterMenuItem(INT32 item, INT32 x, INT32 y, INT32 w, INT32 h);
 
+// Virtual keyboard keys register as TOUCH_VKB_ITEM(row, column).
+#define TOUCH_VKB_BASE 0x4000
+#define TOUCH_VKB_ITEM(row, col) (TOUCH_VKB_BASE + (row) * 64 + (col))
+
+// True when the last input came from the touch screen (not a keyboard or
+// controller): the virtual keyboard then stays in "navigate" mode, so the
+// on-screen D-pad / OK move over its keys instead of typing letters.
+boolean I_TouchOwnsInput(void);
+
 // Whether touch controls are compiled in and enabled right now.
 boolean I_TouchActive(void);
 

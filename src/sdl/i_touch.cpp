@@ -115,6 +115,7 @@ void post_key(INT32 key, bool down)
 
 void pulse(INT32 key)
 {
+	I_OutputMsg("touch: pulse key %d\n", key);
 	if (!g_pressed[key])
 		post_key(key, true);
 	g_pulses.push_back({key, SDL_GetTicks() + 70});
@@ -173,7 +174,7 @@ void build_layout()
 		add(Kind::button, R(0.13f), B(0.15f), 0.22f * u, 'a', kp_button_a[0], "OK", true);
 		add(Kind::button, R(0.38f), B(0.10f), 0.17f * u, KEY_LSHIFT, kp_button_b[0], "BACK");
 		add(Kind::button, R(0.15f), B(0.43f), 0.14f * u, 'q', kp_button_c[0], "EXTRA");
-		if (chat_on || con_destlines > 0)
+		if (chat_on || con_destlines > 0 || menutyping.active)
 			add(Kind::keyboard, w * 0.5f, 0.09f * u, 0.12f * u, 0, kp_button_start[0], "KEYBOARD");
 		return;
 	}
@@ -307,10 +308,24 @@ void menu_tap(float px, float py)
 
 	float bx, by;
 	base_from_pixels(px, py, bx, by);
+	I_OutputMsg("touch: tap px=%.0f,%.0f base=%.1f,%.1f hits=%d itemOn=%d dup=%d,%d vid=%dx%d\n",
+		px, py, bx, by, (int)g_hits.size(), itemOn, vid.dupx, vid.dupy, vid.width, vid.height);
+	for (const MenuHit &m : g_hits)
+		I_OutputMsg("touch:   hit item %d at %d,%d %dx%d\n", m.item, m.x, m.y, m.w, m.h);
 	for (const MenuHit &m : g_hits)
 	{
 		if (bx < m.x || bx >= m.x + m.w || by < m.y || by >= m.y + m.h)
 			continue;
+		if (m.item >= TOUCH_VKB_BASE)
+		{
+			// Virtual keyboard key: put the cursor there and press it.
+			const INT32 k = m.item - TOUCH_VKB_BASE;
+			menutyping.keyboardy = k / 64;
+			menutyping.keyboardx = k % 64;
+			menutyping.keyboardtyping = false;
+			pulse('a');
+			return;
+		}
 		if (m.item != itemOn)
 		{
 			itemOn = m.item;
@@ -392,6 +407,11 @@ extern "C" {
 boolean I_TouchActive(void)
 {
 	return overlay_visible();
+}
+
+boolean I_TouchOwnsInput(void)
+{
+	return cv_touch_controls.value != 0 && g_last_touch != 0 && g_last_touch >= g_last_other;
 }
 
 void I_TouchNotifyOtherInput(void)
@@ -486,6 +506,9 @@ void I_TouchDrawer(void)
 
 	I_TouchTicker();
 
+	if (SDL_IsTextInputActive() && !(chat_on || con_destlines > 0 || menutyping.active))
+		SDL_StopTextInput();
+
 	if (!overlay_visible())
 		return;
 
@@ -518,7 +541,9 @@ void I_TouchDrawer(void)
 				const bool down = e.kind == Kind::button && key_held(e.key);
 				const INT32 t = (down || e.primary) ? std::max(0, trans - (2 << V_ALPHASHIFT)) : trans;
 				draw_patch_centered(e.cx, e.cy, e.d * (down ? 0.92f : 1.f), e.patch[down ? 1 : 0], down ? 0 : t);
-				draw_label(e.cx, e.cy + e.d * 0.52f, e.label, (down ? V_YELLOWMAP : 0) | t);
+				const float ly = e.cy + e.d * 0.52f;
+				const bool above = ly + 9.f * vid.dupy > H();
+				draw_label(e.cx, above ? e.cy - e.d * 0.52f - 8.f * vid.dupy : ly, e.label, (down ? V_YELLOWMAP : 0) | t);
 				break;
 			}
 		}
@@ -536,6 +561,7 @@ void I_TouchDrawer(void) {}
 void I_TouchTicker(void) {}
 void I_TouchRegisterMenuItem(INT32, INT32, INT32, INT32, INT32) {}
 boolean I_TouchActive(void) { return false; }
+boolean I_TouchOwnsInput(void) { return false; }
 }
 
 #endif
