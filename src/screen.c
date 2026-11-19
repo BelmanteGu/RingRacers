@@ -406,10 +406,13 @@ void SCR_CheckDefaultMode(void)
 #if defined(__ANDROID__) || defined(ANDROID)
 		{
 			// Stock 640x400 (or a mode that no longer exists) -> native ultrawide.
+			// Options > Touch & Display > Ultrawide decides between the
+			// phone's native aspect and 16:9 (both 480p by default).
 			extern INT32 android_native_mode;
+			extern consvar_t cv_ultrawide;
 			if (android_native_mode >= 0 && (setmodeneeded == 0
 				|| (cv_scr_width.value == 640 && cv_scr_height.value == 400)))
-				setmodeneeded = android_native_mode + 1;
+				setmodeneeded = (cv_ultrawide.value ? android_native_mode : 7) + 1;
 		}
 #endif
 	}

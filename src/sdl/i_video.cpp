@@ -22,6 +22,7 @@
 #include <imgui.h>
 
 #include "../rhi/rhi.hpp"
+#include "i_touch.h"
 #ifdef ANDROID
 #include "../rhi/gles2/gles2_rhi.hpp"
 #include "rhi_gles2_platform.hpp"
@@ -187,6 +188,10 @@ static void Impl_SetupNativeAspectModes(void)
 		return;
 	const int lw = std::max(dm.w, dm.h);
 	const int lh = std::min(dm.w, dm.h);
+	// 16:9 at 480p for "Ultrawide: Off" (replaces 1280x1024)
+	windowedModes[7][0] = 854;
+	windowedModes[7][1] = 480;
+
 	static const int heights[3] = {360, 480, 540};
 	static const int slots[3]   = {12, 11, 3}; // 1024x1024, 1152x864, 1600x1200
 	for (int i = 0; i < 3; i++)
@@ -198,9 +203,27 @@ static void Impl_SetupNativeAspectModes(void)
 		windowedModes[slots[i]][1] = heights[i];
 	}
 	android_native_mode = slots[1]; // 480p native aspect is the default
+	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0"); // touch is handled natively (i_touch.cpp)
 	CONS_Printf("Ultrawide: display %dx%d -> default %dx%d\n", lw, lh,
 		windowedModes[android_native_mode][0], windowedModes[android_native_mode][1]);
 }
+#endif
+
+#if defined(__ANDROID__) || defined(ANDROID)
+// Options > Touch & Display > Ultrawide
+extern "C" consvar_t cv_ultrawide;
+extern "C" void Ultrawide_OnChange(void);
+void Ultrawide_OnChange(void)
+{
+	if (android_native_mode < 0 || !graphics_started)
+		return;
+	const INT32 mode = cv_ultrawide.value ? android_native_mode : 7;
+	if (vid.modenum != mode)
+		setmodeneeded = mode + 1;
+}
+#else
+extern "C" void Ultrawide_OnChange(void);
+void Ultrawide_OnChange(void) {}
 #endif
 
 static void Impl_VideoSetupBuffer(void);
@@ -1028,7 +1051,15 @@ void I_GetEvent(void)
 				break;
 			case SDL_KEYUP:
 			case SDL_KEYDOWN:
+				if (evt.key.keysym.scancode != SDL_SCANCODE_AC_BACK)
+					I_TouchNotifyOtherInput();
 				Impl_HandleKeyboardEvent(evt.key, evt.type);
+				break;
+			case SDL_FINGERDOWN:
+			case SDL_FINGERMOTION:
+			case SDL_FINGERUP:
+				I_TouchEvent(evt.type == SDL_FINGERDOWN ? TOUCH_DOWN : evt.type == SDL_FINGERUP ? TOUCH_UP : TOUCH_MOVE,
+					(INT64)evt.tfinger.fingerId, evt.tfinger.x, evt.tfinger.y);
 				break;
 			case SDL_MOUSEMOTION:
 				//if (!mouseMotionOnce)
@@ -1047,6 +1078,7 @@ void I_GetEvent(void)
 				break;
 			case SDL_CONTROLLERBUTTONUP:
 			case SDL_CONTROLLERBUTTONDOWN:
+				I_TouchNotifyOtherInput();
 				Impl_HandleControllerButtonEvent(evt.cbutton, evt.type);
 				break;
 

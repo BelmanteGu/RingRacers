@@ -355,6 +355,9 @@ typedef enum
 	mopt_gameplay,
 	mopt_server,
 	mopt_data,
+#if defined(__ANDROID__) || defined(ANDROID)
+	mopt_touch,
+#endif
 	mopt_manual,
 } mopt_e;
 
@@ -517,6 +520,7 @@ extern menu_t OPTIONS_ServerAdvancedDef;
 
 extern menuitem_t OPTIONS_Data[];
 extern menu_t OPTIONS_DataDef;
+extern menu_t OPTIONS_TouchDef;
 
 extern menuitem_t OPTIONS_DataScreenshot[];
 extern menu_t OPTIONS_DataScreenshotDef;

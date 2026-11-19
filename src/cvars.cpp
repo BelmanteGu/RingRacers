@@ -453,6 +453,16 @@ consvar_t cv_scr_depth = Player("scr_depth", "16 bits").values({{8, "8 bits"}, {
 //added : 03-02-98: default screen mode, as loaded/saved in config
 consvar_t cv_scr_width = Player("scr_width", "640").values(CV_Unsigned);
 consvar_t cv_scr_height = Player("scr_height", "400").values(CV_Unsigned);
+// Android port: native touch controls and ultrawide (see sdl/i_touch.cpp)
+void Ultrawide_OnChange(void);
+consvar_t cv_ultrawide = Player("ultrawide", "On").on_off().onchange_noinit(Ultrawide_OnChange);
+consvar_t cv_touch_controls = Player("touch_controls", "Auto").values({{0, "Off"}, {1, "On"}, {2, "Auto"}});
+consvar_t cv_touch_opacity = Player("touch_opacity", "7").min_max(1, 10);
+consvar_t cv_touch_size = Player("touch_size", "Normal").values({{80, "Small"}, {100, "Normal"}, {120, "Large"}, {140, "Huge"}});
+consvar_t cv_touch_lefty = Player("touch_lefty", "Off").on_off();
+consvar_t cv_touch_labels = Player("touch_labels", "On").on_off();
+consvar_t cv_touch_menuswipe = Player("touch_menuswipe", "On").on_off();
+
 consvar_t cv_scr_effect = Player("scr_effect", "Sharp Bilinear").values({{0, "Nearest"}, {1, "Sharp Bilinear"}, {2, "SalCRT"}, {3, "SalCRT Sharp"}}).save();
 
 consvar_t cv_scr_scale = Player("scr_scale", "1.0").floating_point();

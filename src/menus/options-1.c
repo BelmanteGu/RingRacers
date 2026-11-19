@@ -46,6 +46,11 @@ menuitem_t OPTIONS_Main[] =
 	{IT_STRING | IT_SUBMENU, "Data Options", "Video recording, file saving, Discord status.",
 		NULL, {.submenu = &OPTIONS_DataDef}, 0, 0},
 
+#if defined(__ANDROID__) || defined(ANDROID)
+	{IT_STRING | IT_SUBMENU, "Touch & Display", "On-screen controls and ultrawide.",
+		NULL, {.submenu = &OPTIONS_TouchDef}, 0, 0},
+#endif
+
 #ifdef TODONEWMANUAL
 	{IT_STRING | IT_CALL, "Tricks & Secrets", "Those who bother reading a game manual always get the edge over those who don't!",
 		NULL, {.routine = M_Manual}, 0, 0},

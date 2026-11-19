@@ -16,6 +16,7 @@
 #endif
 
 #include "k_menu.h"
+#include "sdl/i_touch.h"
 
 #include "doomdef.h"
 #include "d_main.h"
@@ -5010,6 +5011,8 @@ box_found:
 
 				if (i == itemOn)
 					cursory = y;
+
+				I_TouchRegisterMenuItem(i, x - 16, y - 3, BASEVIDWIDTH - 2 * (x - 16), STRINGHEIGHT + 2);
 
 				if (i == itemOn)
 					V_DrawMenuString(px + 1, y, highlightflags, currentMenu->menuitems[i].text);

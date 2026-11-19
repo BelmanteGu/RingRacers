@@ -10,6 +10,7 @@
 /// \brief Video Options
 
 #include "../k_menu.h"
+extern consvar_t cv_ultrawide;
 #include "../v_video.h" // cv_globalgamma
 #include "../r_fps.h" // fps cvars
 
@@ -19,6 +20,11 @@ menuitem_t OPTIONS_Video[] =
 
 	{IT_STRING | IT_SUBMENU, "Resolution...", "Change the aspect ratio and image quality.",
 		NULL, {.submenu = &OPTIONS_VideoModesDef}, 0, 0},
+
+#if defined(__ANDROID__) || defined(ANDROID)
+	{IT_STRING | IT_CVAR, "Ultrawide", "Fill your phone's whole screen instead of 16:9.",
+		NULL, {.cvar = &cv_ultrawide}, 0, 0},
+#endif
 
 	{IT_NOTHING|IT_SPACE, NULL, NULL,
 		NULL, {NULL}, 0, 0},

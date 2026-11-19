@@ -8,6 +8,8 @@ target_sources(SRB2SDL2 PRIVATE
 	i_system.cpp
 	i_main.cpp
 	i_video.cpp
+	i_touch.cpp
+	i_touch.h
 	dosstr.c
 	endtxt.c
 	hwsym_sdl.c

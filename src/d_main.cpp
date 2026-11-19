@@ -60,6 +60,7 @@
 #include "w_wad.h"
 #include "z_zone.h"
 #include "d_main.h"
+#include "sdl/i_touch.h"
 #include "d_netfil.h"
 #include "m_cheat.h"
 #include "y_inter.h"
@@ -755,6 +756,8 @@ static bool D_Display(bool world)
 	// focus lost moved to M_Drawer
 
 	CON_Drawer();
+
+	I_TouchDrawer(); // Android on-screen controls, above everything
 
 	ps_uitime = I_GetPreciseTime() - ps_uitime;
 

@@ -15,6 +15,7 @@ import java.io.File;
 
 public final class GameActivity extends SDLActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
+    private static final boolean USE_JAVA_OVERLAY = false;
     private TouchControlsView touchControls;
 
     @Override
@@ -53,7 +54,10 @@ public final class GameActivity extends SDLActivity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         enableImmersiveMode();
 
-        if (!mBrokenLibraries && mLayout != null) {
+        // The on-screen controls are now drawn by the engine itself
+        // (src/sdl/i_touch.cpp) with the game's button graphics and live in
+        // Options > Touch & Display. The old Java overlay is kept but hidden.
+        if (USE_JAVA_OVERLAY && !mBrokenLibraries && mLayout != null) {
             touchControls = new TouchControlsView(this);
             RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.MATCH_PARENT,
